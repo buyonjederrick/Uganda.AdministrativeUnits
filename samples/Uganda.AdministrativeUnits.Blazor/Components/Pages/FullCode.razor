@@ -1,0 +1,50 @@
+@page "/full-code"
+@rendermode InteractiveServer
+@inject IAdministrativeUnitDirectory Directory
+
+<PageTitle>Full code lookup</PageTitle>
+
+<h1>Resolve a full code</h1>
+<p class="lead">
+    <code>FullCode</code> is unique nationwide (e.g. <code>06-028-01-01-01</code>). Use it when persisting a reference to a unit.
+</p>
+
+<div class="form-row">
+    <label for="fullCode">Full code</label>
+    <input id="fullCode" class="input input-wide mono" @bind="_fullCode" placeholder="06-028-01-01-01" />
+    <button type="button" class="btn" @onclick="Resolve">Resolve</button>
+</div>
+
+@if (_unit is not null)
+{
+    <section class="card">
+        <h2>@_unit.Name</h2>
+        <dl class="stats">
+            <div><dt>Level</dt><dd>@_unit.Level</dd></div>
+            <div><dt>Code</dt><dd class="mono">@_unit.FullCode</dd></div>
+            <div><dt>Breadcrumb</dt><dd>@_unit.Breadcrumb</dd></div>
+        </dl>
+    </section>
+}
+else if (_attempted)
+{
+    <p class="message">No unit found for &ldquo;@_fullCode.Trim()&rdquo;.</p>
+}
+
+@code {
+    private string _fullCode = "06-028-01-01-01";
+    private bool _attempted;
+    private UnitSummary? _unit;
+
+    protected override void OnInitialized()
+    {
+        Resolve();
+    }
+
+    private void Resolve()
+    {
+        _attempted = true;
+        AdministrativeUnit? found = Directory.GetByFullCode(_fullCode);
+        _unit = found is null ? null : UnitSummary.From(found);
+    }
+}

@@ -8,14 +8,15 @@ An offline, dependency-free .NET directory of Uganda's verified administrative u
 - **Nationally unique codes.** Source codes only repeat between siblings, so every unit also gets a `FullCode` such as `06-028-01-01-01`.
 - **Verified.** The extraction is checked against the totals the source document prints about itself (see [docs/DATA.md](docs/DATA.md)).
 
-Targets `net8.0`.
+Targets `netstandard2.0` (.NET Framework 4.6.1+, .NET Core 2.0+) and `net8.0`.
 
 ## Install
 
 ```
 dotnet add package Uganda.AdministrativeUnits
-dotnet add package Uganda.AdministrativeUnits.DependencyInjection   # optional, for IServiceCollection
 ```
+
+On .NET Framework, NuGet resolves the `netstandard2.0` asset (requires **4.6.1** or newer).
 
 ## Use
 
@@ -73,13 +74,27 @@ The data comes from *Uganda's Verified Administrative Units, July 2022* (generat
 
 > **Licensing:** the MIT licence covers this package's code. The underlying data belongs to its publisher; confirm you may redistribute it before publishing the package publicly.
 
+## Sample apps
+
+In this repository (see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for the canonical workspace path):
+
+```
+dotnet run --project samples/Uganda.AdministrativeUnits.Sample
+dotnet run --project samples/Uganda.AdministrativeUnits.Blazor
+```
+
+The Blazor sample includes overview, district browse, search, full-code lookup, and **cascade select** (`/cascade`).
+
 ## Repository layout
 
 ```
 src/Uganda.AdministrativeUnits                    core library (no dependencies)
 src/Uganda.AdministrativeUnits.DependencyInjection  AddUgandaAdministrativeUnits()
+samples/Uganda.AdministrativeUnits.Sample         console demo
+samples/Uganda.AdministrativeUnits.Blazor         Blazor Web App demo
 tests/Uganda.AdministrativeUnits.Tests            xunit tests
 tools/extract_units.py                            reproducible PDF → dataset extraction
+docs/DEVELOPMENT.md                               where to open the repo locally
 ```
 
 ```

@@ -13,6 +13,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0E61C5E6
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uganda.AdministrativeUnits.Tests", "tests\Uganda.AdministrativeUnits.Tests\Uganda.AdministrativeUnits.Tests.csproj", "{F685814F-4418-41EF-88FC-60FA78DC4AFB}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uganda.AdministrativeUnits.Sample", "samples\Uganda.AdministrativeUnits.Sample\Uganda.AdministrativeUnits.Sample.csproj", "{B2C3D4E5-F6A7-8901-BCDE-F12345678901}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uganda.AdministrativeUnits.Blazor", "samples\Uganda.AdministrativeUnits.Blazor\Uganda.AdministrativeUnits.Blazor.csproj", "{C3D4E5F6-A7B8-9012-CDEF-123456789012}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,10 +40,20 @@ Global
 		{F685814F-4418-41EF-88FC-60FA78DC4AFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F685814F-4418-41EF-88FC-60FA78DC4AFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F685814F-4418-41EF-88FC-60FA78DC4AFB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3D4E5F6-A7B8-9012-CDEF-123456789012}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3D4E5F6-A7B8-9012-CDEF-123456789012}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3D4E5F6-A7B8-9012-CDEF-123456789012}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3D4E5F6-A7B8-9012-CDEF-123456789012}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{60887612-9A14-45D8-93D0-C052873521C1} = {0CDC515C-AB80-4DD3-B0AA-2ECA21900671}
 		{916A042E-842C-416A-8742-C426D5DB6376} = {0CDC515C-AB80-4DD3-B0AA-2ECA21900671}
 		{F685814F-4418-41EF-88FC-60FA78DC4AFB} = {0E61C5E6-94EC-4F8D-856D-71EBD0A63A7C}
+		{B2C3D4E5-F6A7-8901-BCDE-F12345678901} = {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
+		{C3D4E5F6-A7B8-9012-CDEF-123456789012} = {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
 	EndGlobalSection
 EndGlobal

@@ -1,0 +1,46 @@
+@page "/"
+@inject IAdministrativeUnitDirectory Directory
+
+<PageTitle>Overview</PageTitle>
+
+<h1>Administrative units directory</h1>
+<p class="lead">
+    Offline gazetteer of Uganda&rsquo;s verified administrative units (July 2022 edition),
+    loaded from <code>Uganda.AdministrativeUnits</code> via dependency injection.
+</p>
+
+<section class="card-grid">
+    <article class="card">
+        <h2>Dataset</h2>
+        <dl class="stats">
+            <div><dt>Title</dt><dd>@Directory.Dataset.Title</dd></div>
+            <div><dt>Edition</dt><dd>@Directory.Dataset.Edition</dd></div>
+            <div><dt>Published</dt><dd>@Directory.Dataset.PublishedOn.ToString("yyyy-MM-dd")</dd></div>
+            <div><dt>Corrections applied</dt><dd>@Directory.Dataset.CorrectionsApplied</dd></div>
+        </dl>
+    </article>
+    <article class="card">
+        <h2>Counts</h2>
+        <dl class="stats">
+            <div><dt>Districts</dt><dd>@Directory.Statistics.Districts</dd></div>
+            <div><dt>Constituencies</dt><dd>@Directory.Statistics.Constituencies</dd></div>
+            <div><dt>Subcounties</dt><dd>@Directory.Statistics.Subcounties</dd></div>
+            <div><dt>Parishes</dt><dd>@Directory.Statistics.Parishes</dd></div>
+            <div><dt>Villages</dt><dd>@Directory.Statistics.Villages.ToString("N0")</dd></div>
+        </dl>
+    </article>
+</section>
+
+<section class="card">
+    <h2>Quick example</h2>
+    @{
+        District? hoima = Directory.GetDistrict("06");
+        if (hoima is not null)
+        {
+            Village sample = hoima.Villages.First();
+            <p><strong>@hoima.Name</strong> has @hoima.Villages.Count().ToString("N0") villages.</p>
+            <p class="mono">@sample.Breadcrumb</p>
+            <p class="mono muted">FullCode: @sample.FullCode</p>
+        }
+    }
+</section>

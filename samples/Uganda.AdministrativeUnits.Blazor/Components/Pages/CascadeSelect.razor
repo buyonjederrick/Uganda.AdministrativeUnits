@@ -1,0 +1,229 @@
+@page "/cascade"
+@rendermode InteractiveServer
+@inject IAdministrativeUnitDirectory Directory
+
+<PageTitle>Cascade select</PageTitle>
+
+<h1>Cascade select</h1>
+<p class="lead">
+    Pick district, constituency, subcounty, parish, and village. Each list updates when the level above changes.
+</p>
+
+<div class="cascade">
+    <div class="cascade-field">
+        <label for="district">District</label>
+        <select id="district" class="input cascade-select" @bind="_districtCode" @bind:after="OnDistrictChanged">
+            <option value="">— Select district —</option>
+            @foreach (District district in Directory.Districts)
+            {
+                <option value="@district.Code">@district.Name (@district.Code)</option>
+            }
+        </select>
+    </div>
+
+    <div class="cascade-field">
+        <label for="constituency">Constituency</label>
+        <select id="constituency" class="input cascade-select" @bind="_constituencyFullCode" @bind:after="OnConstituencyChanged" disabled="@(_selectedDistrict is null)">
+            <option value="">— Select constituency —</option>
+            @if (_selectedDistrict is not null)
+            {
+                @foreach (Constituency constituency in _selectedDistrict.Constituencies)
+                {
+                    <option value="@constituency.FullCode">@constituency.Name</option>
+                }
+            }
+        </select>
+    </div>
+
+    <div class="cascade-field">
+        <label for="subcounty">Subcounty / town</label>
+        <select id="subcounty" class="input cascade-select" @bind="_subcountyFullCode" @bind:after="OnSubcountyChanged" disabled="@(_selectedConstituency is null)">
+            <option value="">— Select subcounty —</option>
+            @if (_selectedConstituency is not null)
+            {
+                @foreach (Subcounty subcounty in _selectedConstituency.Subcounties)
+                {
+                    <option value="@subcounty.FullCode">@subcounty.Name</option>
+                }
+            }
+        </select>
+    </div>
+
+    <div class="cascade-field">
+        <label for="parish">Parish</label>
+        <select id="parish" class="input cascade-select" @bind="_parishFullCode" @bind:after="OnParishChanged" disabled="@(_selectedSubcounty is null)">
+            <option value="">— Select parish —</option>
+            @if (_selectedSubcounty is not null)
+            {
+                @foreach (Parish parish in _selectedSubcounty.Parishes)
+                {
+                    <option value="@parish.FullCode">@parish.Name</option>
+                }
+            }
+        </select>
+    </div>
+
+    <div class="cascade-field">
+        <label for="village">Village</label>
+        <select id="village" class="input cascade-select" @bind="_villageFullCode" @bind:after="OnVillageChanged" disabled="@(_selectedParish is null)">
+            <option value="">— Select village —</option>
+            @if (_selectedParish is not null)
+            {
+                @foreach (Village village in _selectedParish.Villages)
+                {
+                    <option value="@village.FullCode">@village.Name</option>
+                }
+            }
+        </select>
+    </div>
+</div>
+
+@if (_selectedVillage is not null)
+{
+    <section class="card">
+        <h2>Selected address</h2>
+        <dl class="stats">
+            <div><dt>Full code</dt><dd class="mono">@_selectedVillage.FullCode</dd></div>
+            <div><dt>Breadcrumb</dt><dd>@_selectedVillage.Breadcrumb</dd></div>
+            <div><dt>District</dt><dd>@_selectedVillage.District.Name</dd></div>
+            <div><dt>Constituency</dt><dd>@_selectedVillage.Constituency.Name</dd></div>
+            <div><dt>Subcounty</dt><dd>@_selectedVillage.Subcounty.Name</dd></div>
+            <div><dt>Parish</dt><dd>@_selectedVillage.Parish.Name</dd></div>
+            <div><dt>Village</dt><dd>@_selectedVillage.Name</dd></div>
+        </dl>
+        <p class="muted">Store <code>@_selectedVillage.FullCode</code> when persisting this location.</p>
+    </section>
+}
+else if (_selectionStarted)
+{
+    <p class="message">Complete all five levels to see the resolved address.</p>
+}
+
+@code {
+    private string _districtCode = string.Empty;
+    private string _constituencyFullCode = string.Empty;
+    private string _subcountyFullCode = string.Empty;
+    private string _parishFullCode = string.Empty;
+    private string _villageFullCode = string.Empty;
+
+    private District? _selectedDistrict;
+    private Constituency? _selectedConstituency;
+    private Subcounty? _selectedSubcounty;
+    private Parish? _selectedParish;
+    private Village? _selectedVillage;
+    private bool _selectionStarted;
+
+    protected override void OnInitialized()
+    {
+        ApplyPreselection();
+    }
+
+    private void ApplyPreselection()
+    {
+        District? hoima = Directory.GetDistrict("06");
+        if (hoima is null || hoima.Constituencies.Count == 0)
+        {
+            return;
+        }
+
+        Constituency county = hoima.Constituencies[0];
+        if (county.Subcounties.Count == 0)
+        {
+            return;
+        }
+
+        Subcounty subcounty = county.Subcounties[0];
+        if (subcounty.Parishes.Count == 0)
+        {
+            return;
+        }
+
+        Parish parish = subcounty.Parishes[0];
+        if (parish.Villages.Count == 0)
+        {
+            return;
+        }
+
+        Village village = parish.Villages[0];
+
+        _districtCode = hoima.Code;
+        _constituencyFullCode = county.FullCode;
+        _subcountyFullCode = subcounty.FullCode;
+        _parishFullCode = parish.FullCode;
+        _villageFullCode = village.FullCode;
+
+        SyncSelectionFromCodes();
+    }
+
+    private void OnDistrictChanged()
+    {
+        _selectionStarted = true;
+        _constituencyFullCode = string.Empty;
+        _subcountyFullCode = string.Empty;
+        _parishFullCode = string.Empty;
+        _villageFullCode = string.Empty;
+        SyncSelectionFromCodes();
+    }
+
+    private void OnConstituencyChanged()
+    {
+        _selectionStarted = true;
+        _subcountyFullCode = string.Empty;
+        _parishFullCode = string.Empty;
+        _villageFullCode = string.Empty;
+        SyncSelectionFromCodes();
+    }
+
+    private void OnSubcountyChanged()
+    {
+        _selectionStarted = true;
+        _parishFullCode = string.Empty;
+        _villageFullCode = string.Empty;
+        SyncSelectionFromCodes();
+    }
+
+    private void OnParishChanged()
+    {
+        _selectionStarted = true;
+        _villageFullCode = string.Empty;
+        SyncSelectionFromCodes();
+    }
+
+    private void OnVillageChanged()
+    {
+        _selectionStarted = true;
+        SyncSelectionFromCodes();
+    }
+
+    private void SyncSelectionFromCodes()
+    {
+        _selectedDistrict = string.IsNullOrEmpty(_districtCode)
+            ? null
+            : Directory.GetDistrict(_districtCode);
+
+        _selectedConstituency = ResolveChild(_selectedDistrict?.Constituencies, _constituencyFullCode);
+        _selectedSubcounty = ResolveChild(_selectedConstituency?.Subcounties, _subcountyFullCode);
+        _selectedParish = ResolveChild(_selectedSubcounty?.Parishes, _parishFullCode);
+        _selectedVillage = ResolveChild(_selectedParish?.Villages, _villageFullCode);
+    }
+
+    private static T? ResolveChild<T>(IReadOnlyList<T>? children, string fullCode)
+        where T : AdministrativeUnit
+    {
+        if (children is null || string.IsNullOrEmpty(fullCode))
+        {
+            return null;
+        }
+
+        for (int i = 0; i < children.Count; i++)
+        {
+            T child = children[i];
+            if (string.Equals(child.FullCode, fullCode, StringComparison.Ordinal))
+            {
+                return child;
+            }
+        }
+
+        return null;
+    }
+}

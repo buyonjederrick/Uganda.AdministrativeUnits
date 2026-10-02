@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Blazor sample",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-blazor-sample",
+      "program": "${workspaceFolder}/samples/Uganda.AdministrativeUnits.Blazor/bin/Debug/net8.0/Uganda.AdministrativeUnits.Blazor.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/samples/Uganda.AdministrativeUnits.Blazor",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    {
+      "name": "Console sample",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-console-sample",
+      "program": "${workspaceFolder}/samples/Uganda.AdministrativeUnits.Sample/bin/Debug/net8.0/Uganda.AdministrativeUnits.Sample.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/samples/Uganda.AdministrativeUnits.Sample",
+      "console": "internalConsole",
+      "stopAtEntry": false
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+@page "/districts"
+@rendermode InteractiveServer
+@inject IAdministrativeUnitDirectory Directory
+
+<PageTitle>Districts</PageTitle>
+
+<h1>Browse a district</h1>
+<p class="lead">Look up by code or name, then drill into constituencies and subcounties.</p>
+
+<div class="form-row">
+    <label for="districtCode">District code</label>
+    <input id="districtCode" class="input" @bind="_districtCode" placeholder="e.g. 06" />
+    <button type="button" class="btn" @onclick="LoadByCode">Load by code</button>
+</div>
+
+<div class="form-row">
+    <label for="districtName">District name</label>
+    <input id="districtName" class="input" @bind="_districtName" placeholder="e.g. hoima" />
+    <button type="button" class="btn" @onclick="LoadByName">Load by name</button>
+</div>
+
+@if (!string.IsNullOrEmpty(_message))
+{
+    <p class="message">@_message</p>
+}
+
+@if (_district is not null)
+{
+    <section class="card">
+        <h2>@_district.Name <span class="badge">@_district.FullCode</span></h2>
+        <p>@_district.Villages.Count().ToString("N0") villages · @_district.Constituencies.Count constituencies</p>
+
+        <ul class="tree">
+            @foreach (Constituency county in _district.Constituencies.Take(_constituencyLimit))
+            {
+                <li>
+                    <strong>@county.Name</strong> (@county.FullCode)
+                    <ul>
+                        @foreach (Subcounty subcounty in county.Subcounties.Take(_subcountyLimit))
+                        {
+                            <li>@subcounty.Name — @subcounty.Parishes.Count parishes</li>
+                        }
+                        @if (county.Subcounties.Count > _subcountyLimit)
+                        {
+                            <li class="muted">… and @(county.Subcounties.Count - _subcountyLimit) more subcounties</li>
+                        }
+                    </ul>
+                </li>
+            }
+            @if (_district.Constituencies.Count > _constituencyLimit)
+            {
+                <li class="muted">… and @(_district.Constituencies.Count - _constituencyLimit) more constituencies</li>
+            }
+        </ul>
+
+        @if (_district.Constituencies.Count > _constituencyLimit || _district.Constituencies.Any(c => c.Subcounties.Count > _subcountyLimit))
+        {
+            <button type="button" class="btn btn-secondary" @onclick="ShowMore">Show more</button>
+        }
+    </section>
+}
+
+@code {
+    private const int InitialConstituencyLimit = 5;
+    private const int InitialSubcountyLimit = 4;
+    private const int ExpandedConstituencyLimit = 50;
+    private const int ExpandedSubcountyLimit = 20;
+
+    private string _districtCode = "06";
+    private string _districtName = "hoima";
+    private string? _message;
+    private District? _district;
+    private int _constituencyLimit = InitialConstituencyLimit;
+    private int _subcountyLimit = InitialSubcountyLimit;
+
+    protected override void OnInitialized()
+    {
+        LoadByCode();
+    }
+
+    private void LoadByCode()
+    {
+        _district = Directory.GetDistrict(_districtCode);
+        _message = _district is null ? $"No district with code \"{_districtCode.Trim()}\"." : null;
+        ResetLimits();
+    }
+
+    private void LoadByName()
+    {
+        _district = Directory.GetDistrictByName(_districtName);
+        _message = _district is null ? $"No district matching \"{_districtName.Trim()}\"." : null;
+        if (_district is not null)
+        {
+            _districtCode = _district.Code;
+        }
+
+        ResetLimits();
+    }
+
+    private void ShowMore()
+    {
+        _constituencyLimit = ExpandedConstituencyLimit;
+        _subcountyLimit = ExpandedSubcountyLimit;
+    }
+
+    private void ResetLimits()
+    {
+        _constituencyLimit = InitialConstituencyLimit;
+        _subcountyLimit = InitialSubcountyLimit;
+    }
+}

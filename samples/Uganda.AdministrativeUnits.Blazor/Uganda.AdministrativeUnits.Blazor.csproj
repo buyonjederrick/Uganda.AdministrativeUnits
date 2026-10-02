@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Uganda.AdministrativeUnits.Blazor</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Prefer project references while developing in this repo.
+         To consume published packages instead:
+         <PackageReference Include="Uganda.AdministrativeUnits" Version="1.1.0" />
+         <PackageReference Include="Uganda.AdministrativeUnits.DependencyInjection" Version="1.1.0" /> -->
+    <ProjectReference Include="..\..\src\Uganda.AdministrativeUnits.DependencyInjection\Uganda.AdministrativeUnits.DependencyInjection.csproj" />
+  </ItemGroup>
+
+</Project>

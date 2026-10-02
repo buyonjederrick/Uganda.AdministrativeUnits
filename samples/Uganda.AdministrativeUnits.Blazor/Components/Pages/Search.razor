@@ -1,0 +1,83 @@
+@page "/search"
+@rendermode InteractiveServer
+@inject IAdministrativeUnitDirectory Directory
+
+<PageTitle>Search</PageTitle>
+
+<h1>Search by name</h1>
+<p class="lead">Ranked results: exact match, prefix, word prefix, then substring.</p>
+
+<div class="form-row">
+    <label for="query">Query</label>
+    <input id="query" class="input input-wide" @bind="_query" @bind:event="oninput" placeholder="e.g. kampala or kyamuzizi" />
+</div>
+
+<div class="form-row">
+    <label for="level">Level</label>
+    <select id="level" class="input" @bind="_levelFilter">
+        <option value="">All levels</option>
+        @foreach (AdministrativeLevel level in Enum.GetValues<AdministrativeLevel>())
+        {
+            <option value="@level">@level</option>
+        }
+    </select>
+
+    <label for="max">Max results</label>
+    <input id="max" type="number" min="1" max="100" class="input input-narrow" @bind="_maxResults" />
+    <button type="button" class="btn" @onclick="RunSearch">Search</button>
+</div>
+
+@if (_results.Count == 0 && _searched)
+{
+    <p class="message">No matches.</p>
+}
+
+@if (_results.Count > 0)
+{
+    <table class="results">
+        <thead>
+            <tr>
+                <th>Level</th>
+                <th>Name</th>
+                <th>Full code</th>
+                <th>Breadcrumb</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (UnitSummary hit in _results)
+            {
+                <tr>
+                    <td>@hit.Level</td>
+                    <td>@hit.Name</td>
+                    <td class="mono">@hit.FullCode</td>
+                    <td>@hit.Breadcrumb</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private string _query = "kampala";
+    private string _levelFilter = string.Empty;
+    private int _maxResults = 25;
+    private bool _searched;
+    private IReadOnlyList<UnitSummary> _results = Array.Empty<UnitSummary>();
+
+    protected override void OnInitialized()
+    {
+        RunSearch();
+    }
+
+    private void RunSearch()
+    {
+        _searched = true;
+        AdministrativeLevel? level = string.IsNullOrEmpty(_levelFilter)
+            ? null
+            : Enum.Parse<AdministrativeLevel>(_levelFilter);
+
+        _results = Directory.Search(_query, level, _maxResults)
+            .Select(UnitSummary.From)
+            .ToList();
+    }
+}

@@ -13,9 +13,16 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddUgandaAdministrativeUnits(this IServiceCollection services)
     {
+#if NET8_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(services);
+#else
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+#endif
 
-        services.TryAddSingleton<IAdministrativeUnitDirectory>(static _ => AdministrativeUnitDirectory.Default);
+        services.TryAddSingleton<IAdministrativeUnitDirectory>(_ => AdministrativeUnitDirectory.Default);
         return services;
     }
 }

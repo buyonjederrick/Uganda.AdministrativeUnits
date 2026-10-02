@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Threading;
 using Uganda.AdministrativeUnits.Internal;
@@ -14,7 +15,7 @@ namespace Uganda.AdministrativeUnits;
 public sealed class AdministrativeUnitDirectory : IAdministrativeUnitDirectory
 {
     private static readonly Lazy<AdministrativeUnitDirectory> SharedInstance =
-        new(Load, LazyThreadSafetyMode.ExecutionAndPublication);
+        new Lazy<AdministrativeUnitDirectory>(Load, LazyThreadSafetyMode.ExecutionAndPublication);
 
     private readonly ReadOnlyCollection<District> _districts;
     private readonly ReadOnlyCollection<Constituency> _constituencies;
@@ -30,7 +31,7 @@ public sealed class AdministrativeUnitDirectory : IAdministrativeUnitDirectory
         Dataset = new DatasetInfo(
             dto.Dataset.Title,
             dto.Dataset.Edition,
-            dto.Dataset.PublishedOn,
+            DateOnly.Parse(dto.Dataset.PublishedOn, CultureInfo.InvariantCulture),
             dto.Dataset.SourceNote,
             dto.Dataset.CorrectionsApplied);
 
@@ -48,7 +49,7 @@ public sealed class AdministrativeUnitDirectory : IAdministrativeUnitDirectory
             var district = new District(dd.Code, dd.Name);
             Register(district);
             districts.Add(district);
-            if (!_districtsByCode.TryAdd(district.Code, district) || !_districtsByName.TryAdd(district.NormalizedName, district))
+            if (!_districtsByCode.TryAddValue(district.Code, district) || !_districtsByName.TryAddValue(district.NormalizedName, district))
             {
                 throw new InvalidDataException($"Duplicate district '{district.Code} {district.Name}' in the embedded dataset.");
             }
@@ -122,34 +123,34 @@ public sealed class AdministrativeUnitDirectory : IAdministrativeUnitDirectory
     /// Creates a new, independent directory from the embedded dataset. This re-parses ~3 MB of JSON;
     /// use <see cref="Default"/> unless you specifically need an isolated instance.
     /// </summary>
-    public static AdministrativeUnitDirectory Load() => new(DatasetLoader.LoadEmbedded());
+    public static AdministrativeUnitDirectory Load() => new AdministrativeUnitDirectory(DatasetLoader.LoadEmbedded());
 
     /// <inheritdoc />
     public District? GetDistrict(string code)
     {
-        ArgumentNullException.ThrowIfNull(code);
-        return _districtsByCode.GetValueOrDefault(code.Trim());
+        Guard.NotNull(code, nameof(code));
+        return _districtsByCode.GetValueOrDefaultCompat(code.Trim());
     }
 
     /// <inheritdoc />
     public District? GetDistrictByName(string name)
     {
-        ArgumentNullException.ThrowIfNull(name);
-        return _districtsByName.GetValueOrDefault(NameNormalizer.Normalize(name));
+        Guard.NotNull(name, nameof(name));
+        return _districtsByName.GetValueOrDefaultCompat(NameNormalizer.Normalize(name));
     }
 
     /// <inheritdoc />
     public AdministrativeUnit? GetByFullCode(string fullCode)
     {
-        ArgumentNullException.ThrowIfNull(fullCode);
-        return _byFullCode.GetValueOrDefault(fullCode.Trim());
+        Guard.NotNull(fullCode, nameof(fullCode));
+        return _byFullCode.GetValueOrDefaultCompat(fullCode.Trim());
     }
 
     /// <inheritdoc />
     public IReadOnlyList<AdministrativeUnit> Search(string query, AdministrativeLevel? level = null, int maxResults = 25)
     {
-        ArgumentNullException.ThrowIfNull(query);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxResults);
+        Guard.NotNull(query, nameof(query));
+        Guard.Positive(maxResults, nameof(maxResults));
 
         string needle = NameNormalizer.Normalize(query);
         if (needle.Length == 0)
@@ -158,12 +159,12 @@ public sealed class AdministrativeUnitDirectory : IAdministrativeUnitDirectory
         }
 
         // Bounded "worst-on-top" heap: O(n log maxResults) however common the query is.
-        var heap = new PriorityQueue<Hit, Hit>(WorstFirst);
-        if (level is null or AdministrativeLevel.District) Collect(_districts, needle, heap, maxResults);
-        if (level is null or AdministrativeLevel.Constituency) Collect(_constituencies, needle, heap, maxResults);
-        if (level is null or AdministrativeLevel.Subcounty) Collect(_subcounties, needle, heap, maxResults);
-        if (level is null or AdministrativeLevel.Parish) Collect(_parishes, needle, heap, maxResults);
-        if (level is null or AdministrativeLevel.Village) Collect(_villages, needle, heap, maxResults);
+        var heap = new BoundedWorstFirstHeap<Hit>(static (a, b) => Compare(a, b));
+        if (level is null || level == AdministrativeLevel.District) Collect(_districts, needle, heap, maxResults);
+        if (level is null || level == AdministrativeLevel.Constituency) Collect(_constituencies, needle, heap, maxResults);
+        if (level is null || level == AdministrativeLevel.Subcounty) Collect(_subcounties, needle, heap, maxResults);
+        if (level is null || level == AdministrativeLevel.Parish) Collect(_parishes, needle, heap, maxResults);
+        if (level is null || level == AdministrativeLevel.Village) Collect(_villages, needle, heap, maxResults);
 
         var results = new AdministrativeUnit[heap.Count];
         for (int i = results.Length - 1; i >= 0; i--)
@@ -174,9 +175,7 @@ public sealed class AdministrativeUnitDirectory : IAdministrativeUnitDirectory
         return results;
     }
 
-    private static readonly Comparer<Hit> WorstFirst = Comparer<Hit>.Create(static (a, b) => Compare(b, a));
-
-    private static void Collect<T>(IReadOnlyList<T> pool, string needle, PriorityQueue<Hit, Hit> heap, int maxResults)
+    private static void Collect<T>(IReadOnlyList<T> pool, string needle, BoundedWorstFirstHeap<Hit> heap, int maxResults)
         where T : AdministrativeUnit
     {
         for (int i = 0; i < pool.Count; i++)
@@ -191,11 +190,11 @@ public sealed class AdministrativeUnitDirectory : IAdministrativeUnitDirectory
             var hit = new Hit(rank, unit);
             if (heap.Count < maxResults)
             {
-                heap.Enqueue(hit, hit);
+                heap.Enqueue(hit);
             }
-            else if (heap.TryPeek(out Hit worst, out _) && Compare(hit, worst) < 0)
+            else if (heap.TryPeek(out Hit worst) && Compare(hit, worst) < 0)
             {
-                heap.DequeueEnqueue(hit, hit);
+                heap.ReplaceRoot(hit);
             }
         }
     }
@@ -219,7 +218,18 @@ public sealed class AdministrativeUnitDirectory : IAdministrativeUnitDirectory
         return c != 0 ? c : string.CompareOrdinal(a.Unit.FullCode, b.Unit.FullCode);
     }
 
-    private readonly record struct Hit(int Rank, AdministrativeUnit Unit);
+    private readonly struct Hit
+    {
+        public Hit(int rank, AdministrativeUnit unit)
+        {
+            Rank = rank;
+            Unit = unit;
+        }
+
+        public int Rank { get; }
+
+        public AdministrativeUnit Unit { get; }
+    }
 
     /// <summary>0 = exact, 1 = prefix, 2 = starts a word, 3 = substring, -1 = no match.</summary>
     private static int Rank(string name, string needle)
@@ -245,7 +255,7 @@ public sealed class AdministrativeUnitDirectory : IAdministrativeUnitDirectory
 
     private void Register(AdministrativeUnit unit)
     {
-        if (!_byFullCode.TryAdd(unit.FullCode, unit))
+        if (!_byFullCode.TryAddValue(unit.FullCode, unit))
         {
             throw new InvalidDataException($"Duplicate full code '{unit.FullCode}' in the embedded dataset ({unit.Level}: {unit.Name}).");
         }

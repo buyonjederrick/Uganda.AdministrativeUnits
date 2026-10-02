@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
@@ -17,7 +16,7 @@ internal sealed class DatasetInfoDto
 
     public string Edition { get; set; } = string.Empty;
 
-    public DateOnly PublishedOn { get; set; }
+    public string PublishedOn { get; set; } = string.Empty;
 
     public string SourceNote { get; set; } = string.Empty;
 

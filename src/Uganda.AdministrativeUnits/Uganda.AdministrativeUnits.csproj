@@ -1,24 +1,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
     <RootNamespace>Uganda.AdministrativeUnits</RootNamespace>
     <AssemblyName>Uganda.AdministrativeUnits</AssemblyName>
 
-    <!-- Package metadata -->
     <PackageId>Uganda.AdministrativeUnits</PackageId>
-    <Version>1.0.0</Version>
-    <Description>Offline, dependency-free directory of Uganda's verified administrative units (July 2022): 146 districts, constituencies, subcounties/town councils, parishes and 71,230 villages, with codes, hierarchy navigation and name search.</Description>
-    <PackageTags>uganda;administrative-units;districts;subcounties;parishes;villages;geography;gazetteer;address</PackageTags>
+    <Version>1.1.0</Version>
+    <Description>Offline directory of Uganda's verified administrative units (July 2022): 146 districts, constituencies, subcounties/town councils, parishes and 71,230 villages. Supports .NET Framework 4.6.1+ (via netstandard2.0) and .NET 8+.</Description>
+    <PackageTags>uganda;administrative-units;districts;subcounties;parishes;villages;geography;gazetteer;address;netframework</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <!-- Set Authors, Company and RepositoryUrl before publishing. -->
-
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <IsAotCompatible>true</IsAotCompatible>
+    <PackageReleaseNotes>1.1.0: Multi-target netstandard2.0 and net8.0 so the package works on .NET Framework 4.6.1+ as well as modern .NET.</PackageReleaseNotes>
+    <IsAotCompatible Condition="'$(TargetFramework)' == 'net8.0'">true</IsAotCompatible>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.1" />
+    <PackageReference Include="Portable.System.DateTimeOnly" Version="8.0.2" />
+  </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Data\uganda-administrative-units-2022-07.json.gz"

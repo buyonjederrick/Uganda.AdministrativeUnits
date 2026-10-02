@@ -17,7 +17,7 @@ internal static class NameNormalizer
 
     public static string Normalize(string value)
     {
-        ArgumentNullException.ThrowIfNull(value);
+        Guard.NotNull(value, nameof(value));
 
         if (IsAlreadyNormalized(value))
         {
