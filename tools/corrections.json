@@ -1,0 +1,10 @@
+[
+  {
+    "district": "MANAFWA",
+    "parish": "BUNAMONE WARD",
+    "village": "BUTTA",
+    "from": "01",
+    "to": "02",
+    "reason": "The source prints two villages with code 01 in this parish (BUWALUSATI and BUTTA), followed by a stray '0' fragment on the next line. Codes in the parish otherwise ascend (01, 03, 05, 07), so the second '01' is read as a typo for '02'. This keeps village codes unique within a parish."
+  }
+]
