@@ -20,6 +20,8 @@ On .NET Framework, NuGet resolves the `netstandard2.0` asset (requires **4.6.1**
 
 ## Use
 
+> **Full method-by-method guide** (every public member, cascade select, recipes): **[docs/API.md](docs/API.md)**.
+
 ```csharp
 using System.Linq;
 using Uganda.AdministrativeUnits;
@@ -57,6 +59,19 @@ builder.Services.AddUgandaAdministrativeUnits();   // registers IAdministrativeU
 public sealed class AddressService(IAdministrativeUnitDirectory directory) { /* ... */ }
 ```
 
+### Cascade select (district → village)
+
+Bind the district list from `directory.Districts`. Each deeper list is the **children of the selection above**. Bind lower levels by `FullCode` (not bare `Code`). When a parent changes, clear all deeper selections. Persist the deepest unit’s `FullCode`.
+
+```csharp
+District? district = directory.GetDistrict(selectedDistrictCode);
+IReadOnlyList<Constituency> constituencies = district?.Constituencies ?? Array.Empty<Constituency>();
+// then constituency.Subcounties → subcounty.Parishes → parish.Villages
+// restore later: directory.GetByFullCode(storedVillageFullCode)
+```
+
+Live demo in the Blazor sample at `/cascade`. Step-by-step Blazor and restore-from-storage patterns are in [docs/API.md](docs/API.md#cascade-select-district--village).
+
 ## Design notes
 
 | Topic | Decision |
@@ -85,15 +100,36 @@ dotnet run --project samples/Uganda.AdministrativeUnits.Blazor
 
 The Blazor sample includes overview, district browse, search, full-code lookup, and **cascade select** (`/cascade`).
 
+## SQL Web API (Scalar)
+
+A clean-architecture, SQL Server–backed Web API (**.NET 10 / EF Core 10**) lives under `src/Uganda.AdministrativeUnits.Api`. It seeds from this library on first run, requires an `X-Api-Key` header, returns `ApiResponse<T>` envelopes (including `statusCode`), and serves Scalar docs at `/scalar/v1`.
+
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#sql-web-api) for connection string, migration, API key, and run steps.
+
+## Documentation
+
+| Doc | Contents |
+|---|---|
+| [docs/API.md](docs/API.md) | Every public type/member, cascade select, end-to-end recipes, sample map |
+| [docs/DATA.md](docs/DATA.md) | Provenance, extraction, validation, source quirks |
+| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Local workspace path and how to run samples |
+
 ## Repository layout
 
 ```
 src/Uganda.AdministrativeUnits                    core library (no dependencies)
 src/Uganda.AdministrativeUnits.DependencyInjection  AddUgandaAdministrativeUnits()
+src/Uganda.AdministrativeUnits.Contracts          API DTOs / response models
+src/Uganda.AdministrativeUnits.Domain             SQL entities + repository contracts
+src/Uganda.AdministrativeUnits.Application        query services
+src/Uganda.AdministrativeUnits.Infrastructure     EF Core, SQL Server, seeding
+src/Uganda.AdministrativeUnits.Api                Web API host + Scalar docs
 samples/Uganda.AdministrativeUnits.Sample         console demo
-samples/Uganda.AdministrativeUnits.Blazor         Blazor Web App demo
+samples/Uganda.AdministrativeUnits.Blazor         Blazor Web App demo (incl. /cascade)
 tests/Uganda.AdministrativeUnits.Tests            xunit tests
 tools/extract_units.py                            reproducible PDF → dataset extraction
+docs/API.md                                       full API usage guide
+docs/DATA.md                                      data provenance and validation
 docs/DEVELOPMENT.md                               where to open the repo locally
 ```
 

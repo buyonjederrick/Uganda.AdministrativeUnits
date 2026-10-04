@@ -7,7 +7,8 @@ namespace Uganda.AdministrativeUnits.Tests;
 
 public class DirectoryTests
 {
-    private static readonly IAdministrativeUnitDirectory Directory = AdministrativeUnitDirectory.Default;
+    private static readonly AdministrativeUnitDirectory Directory = AdministrativeUnitDirectory.Default;
+    private static readonly string[] HoimaVillageAncestorNames = ["KATEREIGA", "BUHANIKA", "BUGAHYA COUNTY", "HOIMA"];
 
     [Fact]
     public void Statistics_match_the_totals_printed_in_the_source_register()
@@ -59,7 +60,7 @@ public class DirectoryTests
         Assert.Equal("BUGAHYA COUNTY", village.Constituency.Name);
         Assert.Equal("BUHANIKA", village.Subcounty.Name);
         Assert.Equal("KATEREIGA", village.Parish.Name);
-        Assert.Equal(new[] { "KATEREIGA", "BUHANIKA", "BUGAHYA COUNTY", "HOIMA" }, village.Ancestors().Select(a => a.Name));
+        Assert.Equal(HoimaVillageAncestorNames, village.Ancestors().Select(a => a.Name));
         Assert.Contains(village, village.Parish.Villages);
     }
 

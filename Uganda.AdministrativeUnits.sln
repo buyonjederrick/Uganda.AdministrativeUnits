@@ -9,9 +9,21 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uganda.AdministrativeUnits"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uganda.AdministrativeUnits.DependencyInjection", "src\Uganda.AdministrativeUnits.DependencyInjection\Uganda.AdministrativeUnits.DependencyInjection.csproj", "{916A042E-842C-416A-8742-C426D5DB6376}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uganda.AdministrativeUnits.Contracts", "src\Uganda.AdministrativeUnits.Contracts\Uganda.AdministrativeUnits.Contracts.csproj", "{A1111111-1111-4111-8111-111111111111}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uganda.AdministrativeUnits.Domain", "src\Uganda.AdministrativeUnits.Domain\Uganda.AdministrativeUnits.Domain.csproj", "{A2222222-2222-4222-8222-222222222222}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uganda.AdministrativeUnits.Application", "src\Uganda.AdministrativeUnits.Application\Uganda.AdministrativeUnits.Application.csproj", "{A3333333-3333-4333-8333-333333333333}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uganda.AdministrativeUnits.Infrastructure", "src\Uganda.AdministrativeUnits.Infrastructure\Uganda.AdministrativeUnits.Infrastructure.csproj", "{A4444444-4444-4444-8444-444444444444}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uganda.AdministrativeUnits.Api", "src\Uganda.AdministrativeUnits.Api\Uganda.AdministrativeUnits.Api.csproj", "{A5555555-5555-4555-8555-555555555555}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0E61C5E6-94EC-4F8D-856D-71EBD0A63A7C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uganda.AdministrativeUnits.Tests", "tests\Uganda.AdministrativeUnits.Tests\Uganda.AdministrativeUnits.Tests.csproj", "{F685814F-4418-41EF-88FC-60FA78DC4AFB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uganda.AdministrativeUnits.Api.Tests", "tests\Uganda.AdministrativeUnits.Api.Tests\Uganda.AdministrativeUnits.Api.Tests.csproj", "{A6666666-6666-4666-8666-666666666666}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
 EndProject
@@ -36,10 +48,34 @@ Global
 		{916A042E-842C-416A-8742-C426D5DB6376}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{916A042E-842C-416A-8742-C426D5DB6376}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{916A042E-842C-416A-8742-C426D5DB6376}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1111111-1111-4111-8111-111111111111}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1111111-1111-4111-8111-111111111111}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1111111-1111-4111-8111-111111111111}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1111111-1111-4111-8111-111111111111}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2222222-2222-4222-8222-222222222222}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2222222-2222-4222-8222-222222222222}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2222222-2222-4222-8222-222222222222}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2222222-2222-4222-8222-222222222222}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3333333-3333-4333-8333-333333333333}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3333333-3333-4333-8333-333333333333}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3333333-3333-4333-8333-333333333333}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3333333-3333-4333-8333-333333333333}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4444444-4444-4444-8444-444444444444}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4444444-4444-4444-8444-444444444444}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4444444-4444-4444-8444-444444444444}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4444444-4444-4444-8444-444444444444}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5555555-5555-4555-8555-555555555555}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5555555-5555-4555-8555-555555555555}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5555555-5555-4555-8555-555555555555}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5555555-5555-4555-8555-555555555555}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F685814F-4418-41EF-88FC-60FA78DC4AFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F685814F-4418-41EF-88FC-60FA78DC4AFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F685814F-4418-41EF-88FC-60FA78DC4AFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F685814F-4418-41EF-88FC-60FA78DC4AFB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6666666-6666-4666-8666-666666666666}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6666666-6666-4666-8666-666666666666}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6666666-6666-4666-8666-666666666666}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6666666-6666-4666-8666-666666666666}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -52,7 +88,13 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{60887612-9A14-45D8-93D0-C052873521C1} = {0CDC515C-AB80-4DD3-B0AA-2ECA21900671}
 		{916A042E-842C-416A-8742-C426D5DB6376} = {0CDC515C-AB80-4DD3-B0AA-2ECA21900671}
+		{A1111111-1111-4111-8111-111111111111} = {0CDC515C-AB80-4DD3-B0AA-2ECA21900671}
+		{A2222222-2222-4222-8222-222222222222} = {0CDC515C-AB80-4DD3-B0AA-2ECA21900671}
+		{A3333333-3333-4333-8333-333333333333} = {0CDC515C-AB80-4DD3-B0AA-2ECA21900671}
+		{A4444444-4444-4444-8444-444444444444} = {0CDC515C-AB80-4DD3-B0AA-2ECA21900671}
+		{A5555555-5555-4555-8555-555555555555} = {0CDC515C-AB80-4DD3-B0AA-2ECA21900671}
 		{F685814F-4418-41EF-88FC-60FA78DC4AFB} = {0E61C5E6-94EC-4F8D-856D-71EBD0A63A7C}
+		{A6666666-6666-4666-8666-666666666666} = {0E61C5E6-94EC-4F8D-856D-71EBD0A63A7C}
 		{B2C3D4E5-F6A7-8901-BCDE-F12345678901} = {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
 		{C3D4E5F6-A7B8-9012-CDEF-123456789012} = {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
 	EndGlobalSection

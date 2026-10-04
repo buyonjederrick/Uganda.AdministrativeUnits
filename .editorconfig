@@ -17,3 +17,13 @@ csharp_using_directive_placement = outside_namespace:warning
 dotnet_sort_system_directives_first = true
 csharp_style_var_for_built_in_types = false:suggestion
 dotnet_style_qualification_for_field = false:warning
+
+[tests/**/*.cs]
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA1859.severity = none
+dotnet_diagnostic.CA1861.severity = none
+
+# EF Core scaffolds block-scoped namespaces; keep migrations as generated.
+[**/Migrations/*.cs]
+csharp_style_namespace_declarations = block_scoped:none
+dotnet_diagnostic.IDE0161.severity = none

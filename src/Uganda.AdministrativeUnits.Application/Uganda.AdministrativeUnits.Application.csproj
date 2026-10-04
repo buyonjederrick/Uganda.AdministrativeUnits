@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Uganda.AdministrativeUnits.Application</RootNamespace>
+    <AssemblyName>Uganda.AdministrativeUnits.Application</AssemblyName>
+    <Description>Application services for the Uganda Administrative Units Web API.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Uganda.AdministrativeUnits.Contracts\Uganda.AdministrativeUnits.Contracts.csproj" />
+    <ProjectReference Include="..\Uganda.AdministrativeUnits.Domain\Uganda.AdministrativeUnits.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
