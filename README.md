@@ -5,10 +5,12 @@ An offline, dependency-free .NET directory of Uganda's verified administrative u
 - **Zero dependencies and no network calls.** The dataset (~490 KB compressed) is embedded in the assembly.
 - **Immutable and thread-safe.** Parsed once on first use (~200 ms, ~24 MB), then every lookup is in-memory.
 - **Navigable both ways.** `village.Parish.Subcounty.Constituency.District`, or `district.Villages`.
-- **Nationally unique codes.** Source codes only repeat between siblings, so every unit also gets a `FullCode` such as `06-028-01-01-01`.
-- **Verified.** The extraction is checked against the totals the source document prints about itself (see [docs/DATA.md](docs/DATA.md)).
+- **Nationally unique codes.** Source codes only repeat between siblings, so every unit also gets a `FullCode` such as `100-118-01-13-05`.
+- **Verified.** Counts match the totals printed in the source register.
 
 Targets `netstandard2.0` (.NET Framework 4.6.1+, .NET Core 2.0+) and `net8.0`.
+
+Namespace: `Uganda.AdministrativeUnits`.
 
 ## Install
 
@@ -18,132 +20,420 @@ dotnet add package Uganda.AdministrativeUnits
 
 On .NET Framework, NuGet resolves the `netstandard2.0` asset (requires **4.6.1** or newer).
 
-## Use
-
-> **Full method-by-method guide** (every public member, cascade select, recipes): **[docs/API.md](docs/API.md)**.
-
 ```csharp
-using System.Linq;
 using Uganda.AdministrativeUnits;
 
 IAdministrativeUnitDirectory directory = AdministrativeUnitDirectory.Default;
+```
 
-// Look up a district by code or by name (case, accents and extra spaces are ignored)
-District hoima = directory.GetDistrict("06")!;            // or directory.GetDistrictByName("hoima")
-Console.WriteLine($"{hoima.Name}: {hoima.Villages.Count()} villages");
+---
 
-// Walk down...
-foreach (Constituency county in hoima.Constituencies)
-    foreach (Subcounty subcounty in county.Subcounties)
-        Console.WriteLine($"{county.Name} / {subcounty.Name}: {subcounty.Parishes.Count} parishes");
+## Hierarchy
 
-// ...or up
-Village village = hoima.Villages.First();
-Console.WriteLine(village.Breadcrumb);   // HOIMA › BUGAHYA COUNTY › BUHANIKA › KATEREIGA › KASAMBYA I
-Console.WriteLine(village.FullCode);     // 06-028-01-01-01
-Console.WriteLine(village.District.Name);
+```
+District → Constituency → Subcounty → Parish → Village
+```
 
-// Resolve a stored code back to a unit
-AdministrativeUnit? unit = directory.GetByFullCode("06-028-01-01-01");
+| Level | Type | Meaning |
+|---|---|---|
+| 1 | `District` | District (incl. capital city district) |
+| 2 | `Constituency` | County or division |
+| 3 | `Subcounty` | Subcounty, town council, division, or ward-level unit |
+| 4 | `Parish` | Parish or ward |
+| 5 | `Village` | Village, cell, or zone |
 
-// Search (ranked: exact, prefix, word-prefix, substring)
+`Code` is unique only among siblings. **`FullCode`** joins ancestor codes with `-` and is unique nationwide — **persist `FullCode`**, not bare `Code`.
+
+---
+
+## Contracts (public types)
+
+Everything a consumer can reference is listed below. Constructors are `internal`; you obtain instances from the directory.
+
+### `AdministrativeLevel`
+
+```csharp
+public enum AdministrativeLevel
+{
+    District = 1,
+    Constituency = 2,
+    Subcounty = 3,
+    Parish = 4,
+    Village = 5,
+}
+```
+
+### `DatasetInfo`
+
+```csharp
+public sealed record DatasetInfo(
+    string Title,
+    string Edition,
+    DateOnly PublishedOn,
+    string SourceNote,
+    int CorrectionsApplied);
+```
+
+| Property | Meaning |
+|---|---|
+| `Title` | Source register title |
+| `Edition` | e.g. `"July 2022"` |
+| `PublishedOn` | Date the source was generated |
+| `SourceNote` | How the data was obtained |
+| `CorrectionsApplied` | Count of documented source-data fixes |
+
+### `DatasetStatistics`
+
+```csharp
+public sealed record DatasetStatistics(
+    int Districts,
+    int Constituencies,
+    int Subcounties,
+    int Parishes,
+    int Villages);
+```
+
+### `IAdministrativeUnitDirectory`
+
+```csharp
+public interface IAdministrativeUnitDirectory
+{
+    DatasetInfo Dataset { get; }
+    DatasetStatistics Statistics { get; }
+
+    IReadOnlyList<District> Districts { get; }           // ordered by code
+    IReadOnlyList<Constituency> Constituencies { get; }
+    IReadOnlyList<Subcounty> Subcounties { get; }
+    IReadOnlyList<Parish> Parishes { get; }
+    IReadOnlyList<Village> Villages { get; }
+
+    District? GetDistrict(string code);
+    District? GetDistrictByName(string name);
+    AdministrativeUnit? GetByFullCode(string fullCode);
+
+    IReadOnlyList<AdministrativeUnit> Search(
+        string query,
+        AdministrativeLevel? level = null,
+        int maxResults = 25);
+}
+```
+
+| Member | Behaviour |
+|---|---|
+| `GetDistrict` | By local code (e.g. `"100"`). Trims input. `null` if missing. Throws if `code` is `null`. |
+| `GetDistrictByName` | Ignores case, diacritics, apostrophe variants, extra whitespace. `null` if missing. Throws if `name` is `null`. |
+| `GetByFullCode` | Any level by nationwide code (e.g. `"100-118-01-13-05"`). Trims input. `null` if missing. Throws if `fullCode` is `null`. |
+| `Search` | Ranked name search: exact → prefix → word-prefix → substring. Ties: level, then name, then `FullCode`. Empty/whitespace query → empty list. `maxResults` must be positive. |
+
+### `AdministrativeUnitDirectory`
+
+```csharp
+public sealed class AdministrativeUnitDirectory : IAdministrativeUnitDirectory
+{
+    public static AdministrativeUnitDirectory Default { get; }
+
+    public static AdministrativeUnitDirectory Load();
+
+    // + all IAdministrativeUnitDirectory members
+}
+```
+
+| Member | Behaviour |
+|---|---|
+| `Default` | Shared, lazily loaded singleton. Prefer this. |
+| `Load()` | New independent instance (re-parses embedded JSON). Use only when you need isolation. |
+
+### `AdministrativeUnit` (base)
+
+```csharp
+public abstract class AdministrativeUnit : IEquatable<AdministrativeUnit>
+{
+    public AdministrativeLevel Level { get; }
+    public string Code { get; }              // local; sibling-unique only (e.g. "01")
+    public string FullCode { get; }          // nationwide unique (e.g. "100-118-01-13-05")
+    public string Name { get; }              // as in source (usually upper case)
+    public AdministrativeUnit? Parent { get; } // null for District
+    public string Breadcrumb { get; }        // e.g. "KALUNGU › KALUNGU WEST COUNTY › …"
+
+    public IEnumerable<AdministrativeUnit> Ancestors(); // nearest parent first
+
+    public bool Equals(AdministrativeUnit? other);      // Level + FullCode
+    public override bool Equals(object? obj);
+    public override int GetHashCode();
+    public override string ToString();                  // returns Name
+}
+```
+
+### `District`
+
+```csharp
+public sealed class District : AdministrativeUnit
+{
+    public IReadOnlyList<Constituency> Constituencies { get; }
+    public IEnumerable<Subcounty> Subcounties { get; }  // flattened
+    public IEnumerable<Parish> Parishes { get; }        // flattened
+    public IEnumerable<Village> Villages { get; }       // flattened
+}
+```
+
+`Parent` is always `null`. `FullCode` equals `Code`.
+
+### `Constituency`
+
+```csharp
+public sealed class Constituency : AdministrativeUnit
+{
+    public District District { get; }
+    public IReadOnlyList<Subcounty> Subcounties { get; }
+    public IEnumerable<Parish> Parishes { get; }        // flattened
+    public IEnumerable<Village> Villages { get; }       // flattened
+}
+```
+
+### `Subcounty`
+
+```csharp
+public sealed class Subcounty : AdministrativeUnit
+{
+    public Constituency Constituency { get; }
+    public District District { get; }
+    public IReadOnlyList<Parish> Parishes { get; }
+    public IEnumerable<Village> Villages { get; }       // flattened
+}
+```
+
+### `Parish`
+
+```csharp
+public sealed class Parish : AdministrativeUnit
+{
+    public Subcounty Subcounty { get; }
+    public Constituency Constituency { get; }
+    public District District { get; }
+    public IReadOnlyList<Village> Villages { get; }
+}
+```
+
+### `Village`
+
+```csharp
+public sealed class Village : AdministrativeUnit
+{
+    public Parish Parish { get; }
+    public Subcounty Subcounty { get; }
+    public Constituency Constituency { get; }
+    public District District { get; }
+}
+```
+
+---
+
+## Use cases
+
+### 1. Read dataset metadata and counts
+
+```csharp
+DatasetInfo info = directory.Dataset;
+Console.WriteLine($"{info.Title} ({info.Edition}, {info.PublishedOn:yyyy-MM-dd})");
+Console.WriteLine($"Corrections: {info.CorrectionsApplied}");
+
+DatasetStatistics stats = directory.Statistics;
+Console.WriteLine($"{stats.Districts} districts · {stats.Villages} villages");
+```
+
+### 2. List every unit at a level (national)
+
+```csharp
+foreach (District d in directory.Districts)
+    Console.WriteLine($"{d.Code} {d.Name}");
+
+int parishCount = directory.Parishes.Count;
+```
+
+### 3. Look up a district by code or name
+
+```csharp
+District? byCode = directory.GetDistrict("100");
+District? byName = directory.GetDistrictByName("kalungu");
+District? same = directory.GetDistrictByName("  KALUNGU  ");
+```
+
+### 4. Resolve any unit by `FullCode` (persist & restore)
+
+```csharp
+AdministrativeUnit? unit = directory.GetByFullCode("100-118-01-13-05");
+if (unit is Village village)
+{
+    Console.WriteLine(village.Breadcrumb);
+    // KALUNGU › KALUNGU WEST COUNTY › KALUNGU › KITAMBA › KITAMBA
+    Console.WriteLine(village.District.Name);
+}
+```
+
+### 5. Search names (ranked)
+
+```csharp
+foreach (AdministrativeUnit hit in directory.Search("kampala", maxResults: 5))
+    Console.WriteLine($"[{hit.Level}] {hit.Breadcrumb} ({hit.FullCode})");
+
 foreach (AdministrativeUnit hit in directory.Search("kyamuzizi", AdministrativeLevel.Village))
     Console.WriteLine(hit.Breadcrumb);
+
+IReadOnlyList<AdministrativeUnit> parishes =
+    directory.Search("kitamba", AdministrativeLevel.Parish);
 ```
 
-### Dependency injection
+### 6. Walk the hierarchy down
 
 ```csharp
-builder.Services.AddUgandaAdministrativeUnits();   // registers IAdministrativeUnitDirectory as a singleton
+District kalungu = directory.GetDistrict("100")!;
 
-public sealed class AddressService(IAdministrativeUnitDirectory directory) { /* ... */ }
+foreach (Constituency county in kalungu.Constituencies)
+    foreach (Subcounty subcounty in county.Subcounties)
+        foreach (Parish parish in subcounty.Parishes)
+            foreach (Village village in parish.Villages)
+                Console.WriteLine(village.FullCode);
+
+// Flattened helpers
+int villagesInDistrict = kalungu.Villages.Count();
+IEnumerable<Parish> parishesInCounty = county.Parishes;
+IEnumerable<Village> villagesInSubcounty = subcounty.Villages;
 ```
 
-### Cascade select (district → village)
-
-Bind the district list from `directory.Districts`. Each deeper list is the **children of the selection above**. Bind lower levels by `FullCode` (not bare `Code`). When a parent changes, clear all deeper selections. Persist the deepest unit’s `FullCode`.
+### 7. Walk the hierarchy up (typed parents)
 
 ```csharp
+Village village = (Village)directory.GetByFullCode("100-118-01-13-05")!;
+
+Console.WriteLine(village.Level);        // Village
+Console.WriteLine(village.Code);         // 05
+Console.WriteLine(village.FullCode);     // 100-118-01-13-05
+Console.WriteLine(village.Name);         // KITAMBA
+Console.WriteLine(village.Parent!.Name); // KITAMBA (parish)
+Console.WriteLine(village.Breadcrumb);
+// KALUNGU › KALUNGU WEST COUNTY › KALUNGU › KITAMBA › KITAMBA
+
+Console.WriteLine(village.Parish.Name);
+Console.WriteLine(village.Subcounty.Name);
+Console.WriteLine(village.Constituency.Name);
+Console.WriteLine(village.District.Name);
+// or: village.Parish.Subcounty.Constituency.District
+```
+
+### 8. Enumerate ancestors
+
+Nearest parent first.
+
+```csharp
+foreach (AdministrativeUnit ancestor in village.Ancestors())
+    Console.WriteLine($"{ancestor.Level}: {ancestor.Name}");
+```
+
+### 9. Cascade select (district → village)
+
+Each dropdown lists **children of the selection above**. Bind lower levels by **`FullCode`**. When a parent changes, clear every deeper selection. Persist the deepest unit’s `FullCode`.
+
+```csharp
+IReadOnlyList<District> districts = directory.Districts;
+
 District? district = directory.GetDistrict(selectedDistrictCode);
-IReadOnlyList<Constituency> constituencies = district?.Constituencies ?? Array.Empty<Constituency>();
-// then constituency.Subcounties → subcounty.Parishes → parish.Villages
-// restore later: directory.GetByFullCode(storedVillageFullCode)
+IReadOnlyList<Constituency> constituencies =
+    district?.Constituencies ?? Array.Empty<Constituency>();
+
+Constituency? constituency = constituencies
+    .FirstOrDefault(c => c.FullCode == selectedConstituencyFullCode);
+IReadOnlyList<Subcounty> subcounties =
+    constituency?.Subcounties ?? Array.Empty<Subcounty>();
+
+Subcounty? subcounty = subcounties
+    .FirstOrDefault(s => s.FullCode == selectedSubcountyFullCode);
+IReadOnlyList<Parish> parishes =
+    subcounty?.Parishes ?? Array.Empty<Parish>();
+
+Parish? parish = parishes
+    .FirstOrDefault(p => p.FullCode == selectedParishFullCode);
+IReadOnlyList<Village> villages =
+    parish?.Villages ?? Array.Empty<Village>();
+
+Village? village = villages
+    .FirstOrDefault(v => v.FullCode == selectedVillageFullCode);
+
+string? persist = village?.FullCode;
 ```
 
-Live demo in the Blazor sample at `/cascade`. Step-by-step Blazor and restore-from-storage patterns are in [docs/API.md](docs/API.md#cascade-select-district--village).
+Restore a saved selection:
+
+```csharp
+if (directory.GetByFullCode(storedFullCode) is Village v)
+{
+    string districtCode = v.District.Code;
+    string constituencyFullCode = v.Constituency.FullCode;
+    string subcountyFullCode = v.Subcounty.FullCode;
+    string parishFullCode = v.Parish.FullCode;
+    string villageFullCode = v.FullCode;
+}
+```
+
+You can stop at any level; still persist that level’s `FullCode`.
+
+### 10. Validate a submitted address code
+
+```csharp
+AdministrativeUnit? unit = directory.GetByFullCode(request.FullCode);
+if (unit is null)
+    throw new ValidationException("Unknown administrative unit.");
+
+if (unit.Level != AdministrativeLevel.Village)
+    throw new ValidationException("Expected a village FullCode.");
+```
+
+### 11. Project to your own DTOs (do not serialize units)
+
+The object graph has parent links (cycles). Map to flat models for APIs and persistence.
+
+```csharp
+public sealed record AddressDto(
+    string FullCode,
+    string Name,
+    string Breadcrumb,
+    AdministrativeLevel Level);
+
+AddressDto dto = new(unit.FullCode, unit.Name, unit.Breadcrumb, unit.Level);
+AdministrativeUnit? restored = directory.GetByFullCode(dto.FullCode);
+```
+
+### 12. Compare units
+
+Equality is by `Level` + `FullCode` (ordinal).
+
+```csharp
+bool same = unitA.Equals(unitB);
+string label = unitA.ToString(); // Name
+```
+
+### 13. Isolated directory instance
+
+```csharp
+AdministrativeUnitDirectory isolated = AdministrativeUnitDirectory.Load();
+// independent parse of the embedded dataset; prefer Default in apps
+```
+
+---
 
 ## Design notes
 
 | Topic | Decision |
 |---|---|
-| Hierarchy | `District → Constituency → Subcounty → Parish → Village`, exactly as the source register nests them. |
-| Names | Kept verbatim from the source (upper case). Lookups and search fold case, Latin diacritics, apostrophe variants and whitespace. |
-| Codes | `Code` is the source's local code. `FullCode` joins ancestor codes with `-` and is unique across the country: store this when you persist a reference to a unit. |
-| Subcounty/town | The source lists subcounties, town councils, divisions and wards together; so does this package (`Subcounty`). |
-| Serialization | The object graph has parent links, so don't serialize units directly; project to your own DTOs (e.g. `FullCode`, `Name`, `Breadcrumb`). |
-| Search cost | O(n) scan with a bounded top-K heap: a few milliseconds even for one-letter queries. |
+| Hierarchy | Same nesting as the source register. |
+| Names | Kept verbatim (usually upper case). Lookups/search fold case, Latin diacritics, apostrophe variants, whitespace. |
+| Codes | `Code` = local. `FullCode` = ancestor path with `-`; unique nationwide. |
+| Subcounty | Source “SUBCOUNTY/TOWN” → type `Subcounty`. |
+| Search cost | O(n) scan with a bounded top-K heap. |
+| Thread safety | After load, immutable and safe to share across threads. |
+| Serialization | Do not serialize units; project to DTOs and restore via `GetByFullCode`. |
 
-## Data
+## Data and licence
 
-The data comes from *Uganda's Verified Administrative Units, July 2022* (generated 19 July 2022). Administrative units change over time; this package is a snapshot of that edition, not a live registry. See [docs/DATA.md](docs/DATA.md) for how it was extracted, how it was validated, and known source quirks.
+Data is from *Uganda's Verified Administrative Units, July 2022* (generated 19 July 2022). This package is a snapshot of that edition, not a live registry.
 
-> **Licensing:** the MIT licence covers this package's code. The underlying data belongs to its publisher; confirm you may redistribute it before publishing the package publicly.
-
-## Sample apps
-
-In this repository (see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for the canonical workspace path):
-
-```
-dotnet run --project samples/Uganda.AdministrativeUnits.Sample
-dotnet run --project samples/Uganda.AdministrativeUnits.Blazor
-```
-
-The Blazor sample includes overview, district browse, search, full-code lookup, and **cascade select** (`/cascade`).
-
-## SQL Web API (Scalar)
-
-A clean-architecture, SQL Server–backed Web API (**.NET 10 / EF Core 10**) lives under `src/Uganda.AdministrativeUnits.Api`. It seeds from this library on first run, requires an `X-Api-Key` header, returns `ApiResponse<T>` envelopes (including `statusCode`), and serves Scalar docs at `/scalar/v1`.
-
-See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#sql-web-api) for connection string, migration, API key, and run steps.
-
-## Documentation
-
-| Doc | Contents |
-|---|---|
-| [docs/API.md](docs/API.md) | Every public type/member, cascade select, end-to-end recipes, sample map |
-| [docs/DATA.md](docs/DATA.md) | Provenance, extraction, validation, source quirks |
-| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Local workspace path and how to run samples |
-
-## Repository layout
-
-```
-src/Uganda.AdministrativeUnits                    core library (no dependencies)
-src/Uganda.AdministrativeUnits.DependencyInjection  AddUgandaAdministrativeUnits()
-src/Uganda.AdministrativeUnits.Contracts          API DTOs / response models
-src/Uganda.AdministrativeUnits.Domain             SQL entities + repository contracts
-src/Uganda.AdministrativeUnits.Application        query services
-src/Uganda.AdministrativeUnits.Infrastructure     EF Core, SQL Server, seeding
-src/Uganda.AdministrativeUnits.Api                Web API host + Scalar docs
-samples/Uganda.AdministrativeUnits.Sample         console demo
-samples/Uganda.AdministrativeUnits.Blazor         Blazor Web App demo (incl. /cascade)
-tests/Uganda.AdministrativeUnits.Tests            xunit tests
-tools/extract_units.py                            reproducible PDF → dataset extraction
-docs/API.md                                       full API usage guide
-docs/DATA.md                                      data provenance and validation
-docs/DEVELOPMENT.md                               where to open the repo locally
-```
-
-```
-dotnet build -c Release
-dotnet test
-dotnet pack src/Uganda.AdministrativeUnits -c Release
-```
-
-## Regenerating the dataset
-
-```
-python tools/extract_units.py ADMINISTRATIVE_UNITS_IN_UGANDA_JULY_2022.pdf \
-       src/Uganda.AdministrativeUnits/Data/uganda-administrative-units-2022-07.json.gz
-```
-
-Requires Python 3.8+ and `pdftotext` (poppler-utils). Output is byte-for-byte reproducible, and the script fails if its result disagrees with the document's own totals.
+The MIT licence covers this package's **code**. The underlying data belongs to its publisher; confirm you may redistribute it before publishing derivatives publicly.
